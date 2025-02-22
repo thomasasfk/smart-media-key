@@ -20,6 +20,7 @@ While the default mappings mirror AirPods, the underlying system can handle any 
 - [x] Basic system tray presence
 - [x] AirPods-style media controls
 - [x] Cross-platform tray support
+- [x] GitHub actions to release version (temporary)
 
 ### Possibly will do in the future:
 - [ ] Standard keyboard support
@@ -28,5 +29,5 @@ While the default mappings mirror AirPods, the underlying system can handle any 
 - [ ] Full cross-platform feature support
 - [ ] Code organization/modularization
 - [ ] Proper icon for the app
-- [ ] GitHub actions to release versions
+- [ ] Improved release GitHub action for platforms etc.
 - [ ] Test coverage
