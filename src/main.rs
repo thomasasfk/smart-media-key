@@ -1,23 +1,23 @@
 #![windows_subsystem = "windows"]
+use enigo::{Direction::Click, Enigo, Key, Keyboard, Settings};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::hash::Hash;
+use std::path::PathBuf;
 use std::{
     collections::{HashMap, VecDeque},
     sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant},
 };
-use std::hash::Hash;
-use std::fs;
-use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 use tray_item::TrayItem;
-use enigo::{Direction::Click, Enigo, Key, Keyboard, Settings};
 
 #[derive(Serialize, Deserialize)]
 struct Config {
     #[cfg(feature = "wooting")]
     media_key: HIDCodes,
     #[cfg(not(feature = "wooting"))]
-    media_key: u16,  // Raw keycode
+    media_key: u16, // Raw keycode
     play_pause_key: Key,
     next_track_key: Key,
     prev_track_key: Key,
@@ -30,7 +30,7 @@ impl Default for Config {
             #[cfg(feature = "wooting")]
             media_key: HIDCodes::F13,
             #[cfg(not(feature = "wooting"))]
-            media_key: 0x68,  // F13
+            media_key: 0x68, // F13
             play_pause_key: Key::MediaPlayPause,
             next_track_key: Key::MediaNextTrack,
             prev_track_key: Key::MediaPrevTrack,
@@ -71,8 +71,8 @@ fn get_config_path() -> PathBuf {
 
 #[cfg(feature = "wooting")]
 use wooting_analog_wrapper::{
-    initialise, read_analog, set_device_event_cb, set_keycode_mode, DeviceEventType, DeviceInfo_FFI,
-    HIDCodes, KeycodeType,
+    initialise, read_analog, set_device_event_cb, set_keycode_mode, DeviceEventType,
+    DeviceInfo_FFI, HIDCodes, KeycodeType,
 };
 
 const POLLING_INTERVAL: Duration = Duration::from_millis(5);
@@ -117,8 +117,8 @@ impl KeyboardProvider for DefaultKeyboardProvider {
                 // Here you would implement actual key detection logic
                 // This is a placeholder that always returns "not pressed"
                 Ok(0.0)
-            },
-            _ => Err("Invalid key type for keyboard".to_string())
+            }
+            _ => Err("Invalid key type for keyboard".to_string()),
         }
     }
 
@@ -134,17 +134,17 @@ pub struct WootingKeyboardProvider;
 impl KeyboardProvider for WootingKeyboardProvider {
     fn read_key_pressure(&self, key: KeyCode) -> Result<f32, String> {
         match key {
-            KeyCode::Wooting(code) => {
-                read_analog(code as u16)
-                    .0
-                    .map_err(|e| format!("Failed to read analog value: {:?}", e))
-            },
+            KeyCode::Wooting(code) => read_analog(code as u16)
+                .0
+                .map_err(|e| format!("Failed to read analog value: {:?}", e)),
             _ => Err("Invalid key type for Wooting keyboard".to_string()),
         }
     }
 
     fn initialize(&self) -> Result<(), String> {
-        initialise().0.map_err(|e| format!("Failed to initialize Wooting SDK: {:?}", e))?;
+        initialise()
+            .0
+            .map_err(|e| format!("Failed to initialize Wooting SDK: {:?}", e))?;
         set_keycode_mode(KeycodeType::HID)
             .0
             .map_err(|e| format!("Failed to set keycode mode: {:?}", e))?;
@@ -178,7 +178,11 @@ pub struct TapRange {
 
 impl TapRange {
     pub fn new(min_duration: Duration, max_duration: Duration, tap_type: TapDuration) -> Self {
-        Self { min_duration, max_duration, tap_type }
+        Self {
+            min_duration,
+            max_duration,
+            tap_type,
+        }
     }
 
     pub fn short() -> Self {
@@ -251,7 +255,7 @@ pub struct KeyConfig {
 
 #[derive(Debug, Clone)]
 struct TapEvent {
-    tap: Tap
+    tap: Tap,
 }
 
 #[derive(Clone)]
@@ -334,11 +338,11 @@ impl KeyConfig {
         self.patterns.iter().any(|pattern_action| {
             pattern_action.sequence.sequence.len() > current_events.len()
                 && pattern_action
-                .sequence
-                .sequence
-                .iter()
-                .zip(current_events.iter())
-                .all(|(expected, event)| *expected == event.tap.tap_type)
+                    .sequence
+                    .sequence
+                    .iter()
+                    .zip(current_events.iter())
+                    .all(|(expected, event)| *expected == event.tap.tap_type)
         })
     }
 }
@@ -392,8 +396,12 @@ impl PatternDetector {
                 let configs = configs.lock().unwrap();
 
                 for config in configs.iter() {
-                    if let Ok(pressure) = keyboard_provider.read_key_pressure(config.key_code.clone()) {
-                        let state = states.entry(config.key_code.clone()).or_insert_with(KeyState::new);
+                    if let Ok(pressure) =
+                        keyboard_provider.read_key_pressure(config.key_code.clone())
+                    {
+                        let state = states
+                            .entry(config.key_code.clone())
+                            .or_insert_with(KeyState::new);
 
                         let was_pressed = state.last_pressure > config.pressure_threshold;
                         let is_pressed = pressure > config.pressure_threshold;
@@ -407,9 +415,7 @@ impl PatternDetector {
                                     let duration = press_start.elapsed();
                                     let tap = config.get_tap(duration, pressure);
 
-                                    state.tap_events.push_back(TapEvent {
-                                        tap
-                                    });
+                                    state.tap_events.push_back(TapEvent { tap });
 
                                     state.last_released = Some(Instant::now());
                                     Self::check_and_execute_patterns(config, state);
@@ -426,7 +432,9 @@ impl PatternDetector {
                                     && last_release.elapsed() >= config.debounce_duration
                                 {
                                     if let Some(pattern_idx) = state.last_valid_pattern_index {
-                                        if let Some(pattern_action) = config.patterns.get(pattern_idx) {
+                                        if let Some(pattern_action) =
+                                            config.patterns.get(pattern_idx)
+                                        {
                                             (pattern_action.action)();
                                         }
                                     }
@@ -459,22 +467,26 @@ impl Drop for PatternDetector {
 }
 
 fn main() {
-    let mut tray = TrayItem::new("Smart Media Key", tray_item::IconSource::Resource("tray-icon")).unwrap();
+    let mut tray = TrayItem::new(
+        "Smart Media Key",
+        tray_item::IconSource::Resource("tray-icon"),
+    )
+    .unwrap();
 
     tray.add_menu_item("Quit", move || {
         std::process::exit(0);
-    }).unwrap();
+    })
+    .unwrap();
 
     #[cfg(feature = "wooting")]
     let keyboard_provider = WootingKeyboardProvider;
     #[cfg(not(feature = "wooting"))]
     let keyboard_provider = DefaultKeyboardProvider;
 
-    let detector = PatternDetector::new(keyboard_provider).expect("Failed to create pattern detector");
+    let detector =
+        PatternDetector::new(keyboard_provider).expect("Failed to create pattern detector");
 
-    let enigo = Arc::new(Mutex::new(
-        Enigo::new(&Settings::default()).unwrap()
-    ));
+    let enigo = Arc::new(Mutex::new(Enigo::new(&Settings::default()).unwrap()));
 
     #[cfg(feature = "wooting")]
     let mut media_key_config = KeyConfig::new(HIDCodes::F13);
@@ -482,12 +494,9 @@ fn main() {
     let mut media_key_config = KeyConfig::new(KeyCode::Raw(0x68)); // F13
 
     let enigo_play = enigo.clone();
-    media_key_config.add_pattern(
-        TapSequence::new(vec![TapDuration::Short]),
-        move || {
-            let _ = enigo_play.lock().unwrap().key(Key::MediaPlayPause, Click);
-        },
-    );
+    media_key_config.add_pattern(TapSequence::new(vec![TapDuration::Short]), move || {
+        let _ = enigo_play.lock().unwrap().key(Key::MediaPlayPause, Click);
+    });
 
     let enigo_next = enigo.clone();
     media_key_config.add_pattern(
@@ -499,19 +508,20 @@ fn main() {
 
     let enigo_prev = enigo.clone();
     media_key_config.add_pattern(
-        TapSequence::new(vec![TapDuration::Short, TapDuration::Short, TapDuration::Short]),
+        TapSequence::new(vec![
+            TapDuration::Short,
+            TapDuration::Short,
+            TapDuration::Short,
+        ]),
         move || {
             let _ = enigo_prev.lock().unwrap().key(Key::MediaPrevTrack, Click);
         },
     );
 
     let enigo_prev = enigo.clone();
-    media_key_config.add_pattern(
-        TapSequence::new(vec![TapDuration::Long]),
-        move || {
-            let _ = enigo_prev.lock().unwrap().key(Key::F14, Click);
-        },
-    );
+    media_key_config.add_pattern(TapSequence::new(vec![TapDuration::Long]), move || {
+        let _ = enigo_prev.lock().unwrap().key(Key::F14, Click);
+    });
 
     detector.add_key_config(media_key_config);
     let _ = detector.start();
