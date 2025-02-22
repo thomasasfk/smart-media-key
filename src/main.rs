@@ -30,7 +30,7 @@ impl Default for Config {
             #[cfg(feature = "wooting")]
             media_key: HIDCodes::F13,
             #[cfg(not(feature = "wooting"))]
-            media_key: 0x68,  // Pause/Break key code
+            media_key: 0x68,  // F13
             play_pause_key: Key::MediaPlayPause,
             next_track_key: Key::MediaNextTrack,
             prev_track_key: Key::MediaPrevTrack,
@@ -479,7 +479,7 @@ fn main() {
     #[cfg(feature = "wooting")]
     let mut media_key_config = KeyConfig::new(HIDCodes::F13);
     #[cfg(not(feature = "wooting"))]
-    let mut media_key_config = KeyConfig::new(KeyCode::Raw(0x68)); // Pause/Break key code
+    let mut media_key_config = KeyConfig::new(KeyCode::Raw(0x68)); // F13
 
     let enigo_play = enigo.clone();
     media_key_config.add_pattern(
