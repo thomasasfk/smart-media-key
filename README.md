@@ -5,10 +5,10 @@ A utility that simulates AirPods-style media controls using keyboard tap pattern
 ## What it does
 
 The utility detects different tap patterns on a key and converts them into actions. By default, it mimics AirPods behavior using the F13 key:
-- Single tap → Play/Pause
-- Double tap → Next Track
-- Triple tap → Previous Track
-- Long press → F14 (usable for voice assistant/speech-to-text/etc)
+- Single tap -> Play/Pause
+- Double tap -> Next Track
+- Triple tap -> Previous Track
+- Long press -> F14 (usable for voice assistant/speech-to-text/etc)
 
 While the default mappings mirror AirPods, the underlying system can handle any combination of tap patterns to trigger any key press. The groundwork exists for configuring different keys and actions through JSON.
 
